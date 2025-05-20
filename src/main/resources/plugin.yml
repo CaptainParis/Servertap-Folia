@@ -14,3 +14,6 @@ commands:
   servertap:
     description: ServerTap Management Command
     permission: servertap.admin
+  lodestone:
+    description: Opens the Lode Stone GUI
+    permission: servertap.lodestone

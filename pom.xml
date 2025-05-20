@@ -20,6 +20,11 @@
 
         <javalin.version>5.6.2</javalin.version>
         <javalin.openapi.version>5.6.2-2</javalin.openapi.version>
+
+        <!-- Platform versions -->
+        <paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>
+        <bungeecord.version>1.20-R0.1-SNAPSHOT</bungeecord.version>
+        <velocity.version>3.4.0-SNAPSHOT</velocity.version>
     </properties>
 
     <repositories>
@@ -46,6 +51,12 @@
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
 
+        <!-- for bungeecord -->
+        <repository>
+            <id>bungeecord-repo</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+
         <!-- for the OpenAPI javalin plugin -->
         <repository>
             <id>reposilite-repository</id>
@@ -61,11 +72,28 @@
             <version>0.2.0-incubating</version>
         </dependency>
 
+        <!-- Platform Dependencies -->
         <!-- Paper Dependency -->
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>1.21.4-R0.1-SNAPSHOT</version>
+            <version>${paper.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- BungeeCord Dependency -->
+        <dependency>
+            <groupId>net.md-5</groupId>
+            <artifactId>bungeecord-api</artifactId>
+            <version>${bungeecord.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Velocity Dependency -->
+        <dependency>
+            <groupId>com.velocitypowered</groupId>
+            <artifactId>velocity-api</artifactId>
+            <version>${velocity.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -107,7 +135,7 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.1</version>
         </dependency>
-        
+
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
@@ -175,7 +203,7 @@
         </dependency>
 
         <!-- test dependencies -->
-        
+
         <!-- MockBukkit Dependency -->
         <dependency>
             <groupId>org.mockbukkit.mockbukkit</groupId>
@@ -204,6 +232,20 @@
             <version>5.9.2</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Mockito for mocking in tests -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.3.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.3.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -220,6 +262,11 @@
                             <groupId>io.javalin.community.openapi</groupId>
                             <artifactId>openapi-annotation-processor</artifactId>
                             <version>${javalin.openapi.version}</version>
+                        </annotationProcessorPath>
+                        <annotationProcessorPath>
+                            <groupId>com.velocitypowered</groupId>
+                            <artifactId>velocity-api</artifactId>
+                            <version>${velocity.version}</version>
                         </annotationProcessorPath>
                     </annotationProcessorPaths>
                     <source>${maven.compiler.source}</source>
@@ -256,7 +303,11 @@
                 </executions>
                 <configuration>
                     <basedir>${basedir}</basedir>
-                    <file>${project.basedir}/src/main/resources/plugin.yml</file>
+                    <files>
+                        <file>${project.basedir}/src/main/resources/plugin.yml</file>
+                        <file>${project.basedir}/src/main/resources/bungee.yml</file>
+                        <file>${project.basedir}/src/main/resources/velocity-plugin.json</file>
+                    </files>
                     <regex>true</regex>
                     <regexFlags>
                         <regexFlag>MULTILINE</regexFlag>
@@ -265,6 +316,10 @@
                         <replacement>
                             <token>^version: [a-zA-Z0-9.-]+$</token>
                             <value>version: ${project.version}</value>
+                        </replacement>
+                        <replacement>
+                            <token>"version": "[a-zA-Z0-9.-]+"</token>
+                            <value>"version": "${project.version}"</value>
                         </replacement>
                     </replacements>
                 </configuration>

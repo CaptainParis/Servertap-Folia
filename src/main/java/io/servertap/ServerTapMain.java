@@ -1,7 +1,11 @@
 package io.servertap;
 
+import io.servertap.api.platform.PlatformFactory;
+import io.servertap.api.platform.ServerTapPlatform;
 import io.servertap.api.v1.models.ConsoleLine;
+import io.servertap.commands.LodeStoneCommand;
 import io.servertap.commands.ServerTapCommand;
+import io.servertap.gui.GUIManager;
 import io.servertap.metrics.Metrics;
 import io.servertap.plugin.api.ServerTapWebserverService;
 import io.servertap.plugin.api.ServerTapWebserverServiceImpl;
@@ -38,6 +42,8 @@ public class ServerTapMain extends JavaPlugin {
     private final LagDetector lagDetector;
     private final Server server;
     private WebServer app;
+    private GUIManager guiManager;
+    private ServerTapPlatform platform;
 
     public ServerTapMain() {
         super();
@@ -55,6 +61,9 @@ public class ServerTapMain extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        // Initialize the platform
+        platform = PlatformFactory.createPlatform(this, log);
+
         // Tell bStats what plugin this is
         new Metrics(this, 9492);
 
@@ -77,10 +86,17 @@ public class ServerTapMain extends JavaPlugin {
 
         new ServerTapCommand(this);
 
+        // Initialize GUI system
+        guiManager = new GUIManager(this);
+        new LodeStoneCommand(this, guiManager);
+
         webhookEventListener = new WebhookEventListener(this, bukkitConfig, log, externalPluginWrapperRepo.getEconomyWrapper());
         server.getPluginManager().registerEvents(webhookEventListener, this);
 
         server.getServicesManager().register(ServerTapWebserverService.class, new ServerTapWebserverServiceImpl(this), this, ServicePriority.Normal);
+
+        // Initialize the platform
+        platform.initialize();
     }
 
     private void setupWebServer(FileConfiguration bukkitConfig) {
@@ -113,6 +129,11 @@ public class ServerTapMain extends JavaPlugin {
         if (app != null) {
             app.stop();
         }
+
+        // Shutdown the platform
+        if (platform != null) {
+            platform.shutdown();
+        }
     }
 
     public int getMaxConsoleBufferSize() {
@@ -125,5 +146,17 @@ public class ServerTapMain extends JavaPlugin {
 
     public WebServer getWebServer() {
         return this.app;
+    }
+
+    public GUIManager getGUIManager() {
+        return this.guiManager;
+    }
+
+    public ConsoleListener getConsoleListener() {
+        return this.consoleListener;
+    }
+
+    public ServerTapPlatform getPlatform() {
+        return this.platform;
     }
 }

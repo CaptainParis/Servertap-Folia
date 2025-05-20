@@ -5,9 +5,7 @@
 <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/servertap-io/servertap/total?color=brightgreen">
 <a href="https://discord.gg/nSWRYzBMfp"><img src="https://img.shields.io/discord/919982507271802890?logo=discord&label=discord&color=brightgreen" alt="chat on Discord"></a>
 
-ServerTap is a REST API for Bukkit, Spigot, and PaperMC Minecraft servers. It
-allows for server admins to query and interact with their servers using
-simple REST semantics.
+ServerTap is a REST API for Minecraft servers, supporting Bukkit/Spigot/Paper/Folia servers, BungeeCord proxies, and Velocity proxies. It allows for server admins to query and interact with their servers using simple REST semantics.
 
 Head over to https://github.com/servertap-io/servertap/releases/latest to grab the latest and greatest plugin JAR.
 
@@ -30,6 +28,10 @@ This helps us keep track of issues and questions more effectively and answer you
 - [Websockets](#websockets)
   - [Authenticating Websockets](#authenticating-websockets)
 - [Using the Developer API](#using-the-developer-api)
+- [Platform Support](#platform-support)
+  - [Bukkit/Spigot/Paper/Folia](#bukkitspigotpaperfolia)
+  - [BungeeCord](#bungeecord)
+  - [Velocity](#velocity)
 - [Contributing to ServerTap](#contributing-to-servertap)
 
 # Usage
@@ -108,11 +110,11 @@ Some examples of capabilities are:
   - Get/Add/Remove Ops
   - Get/Add Whitelist
 - Get/Save/List Worlds
-- List/Read Scoreboard(s) 
+- List/Read Scoreboard(s)
 - Broadcast
 - List/Find Players
 - Get/Pay/Debt Economy (W/ Plugin)
-- List Plugins 
+- List Plugins
 
 # TLS
 
@@ -224,7 +226,7 @@ The available events are currently:
 
 # Websockets
 
-ServerTap has a bi-directional websockets interface which allows you to 
+ServerTap has a bi-directional websockets interface which allows you to
 receive server log lines in realtime (no polling!).
 
 Once connected, any server log line that goes through the normal logging
@@ -316,6 +318,46 @@ The API provides the `getWebserver()` Method that will return the internal [Java
 This will give you deep access to the Webserver providing you every ability possible.
 Be careful not to break ServerTaps Functionality (e.g. the AccessManager checking Security)!
 Use this only if necessary.
+
+# Platform Support
+
+ServerTap now supports multiple Minecraft server platforms, including Bukkit-based servers, BungeeCord proxies, and Velocity proxies. The plugin automatically detects which platform it's running on and adapts accordingly.
+
+## Bukkit/Spigot/Paper/Folia
+
+ServerTap has full support for Bukkit-based servers, including Spigot, Paper, and Folia.
+
+To use ServerTap with a Bukkit-based server:
+
+1. Download the latest version of ServerTap
+2. Install it in your server's `plugins` directory
+3. Start your server
+
+ServerTap will automatically detect the server type and use the appropriate methods. For Folia servers, it will use the regionized scheduler to ensure compatibility with Folia's threading model.
+
+## BungeeCord
+
+ServerTap now supports BungeeCord proxies, allowing you to manage your proxy network through the API.
+
+To use ServerTap with BungeeCord:
+
+1. Download the latest version of ServerTap
+2. Install it in your BungeeCord's `plugins` directory
+3. Start your BungeeCord proxy
+
+The BungeeCord version of ServerTap provides proxy-specific endpoints for managing connected servers and players across your network.
+
+## Velocity
+
+ServerTap also supports Velocity proxies, the modern alternative to BungeeCord.
+
+To use ServerTap with Velocity:
+
+1. Download the latest version of ServerTap
+2. Install it in your Velocity's `plugins` directory
+3. Start your Velocity proxy
+
+The Velocity version of ServerTap provides the same proxy-specific endpoints as the BungeeCord version, allowing you to manage your proxy network through a consistent API regardless of which proxy software you use.
 
 # Contributing to ServerTap
 
