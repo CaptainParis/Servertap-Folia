@@ -1,6 +1,7 @@
 package io.servertap.api.platform.velocity.scheduler;
 
 import com.velocitypowered.api.scheduler.ScheduledTask;
+import com.velocitypowered.api.scheduler.Scheduler;
 import io.servertap.api.platform.scheduler.SchedulerAdapter;
 import io.servertap.velocity.VelocityServerTapMain;
 
@@ -14,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 public class VelocitySchedulerAdapter implements SchedulerAdapter {
 
     private final VelocityServerTapMain plugin;
-    private final Map<Integer, ScheduledTask> tasks = new HashMap<>();
+    private final Map<Integer, Object> tasks = new HashMap<>();
     private int taskCounter = 0;
 
     /**
@@ -27,7 +28,8 @@ public class VelocitySchedulerAdapter implements SchedulerAdapter {
 
     @Override
     public void runAsync(Runnable runnable) {
-        plugin.getServer().getScheduler().buildTask(plugin, runnable).schedule();
+        Scheduler scheduler = plugin.getServer().getScheduler();
+        scheduler.buildTask(plugin, runnable).schedule();
     }
 
     @Override
@@ -40,7 +42,8 @@ public class VelocitySchedulerAdapter implements SchedulerAdapter {
     public void runAsyncLater(Runnable runnable, long delayTicks) {
         // Convert ticks to milliseconds (assuming 20 ticks per second)
         long delayMillis = delayTicks * 50;
-        plugin.getServer().getScheduler().buildTask(plugin, runnable)
+        Scheduler scheduler = plugin.getServer().getScheduler();
+        scheduler.buildTask(plugin, runnable)
                 .delay(delayMillis, TimeUnit.MILLISECONDS)
                 .schedule();
     }
@@ -56,13 +59,16 @@ public class VelocitySchedulerAdapter implements SchedulerAdapter {
         // Convert ticks to milliseconds (assuming 20 ticks per second)
         long delayMillis = delayTicks * 50;
         long periodMillis = periodTicks * 50;
-        
+
         int taskId = ++taskCounter;
-        ScheduledTask task = plugin.getServer().getScheduler().buildTask(plugin, runnable)
+        Scheduler scheduler = plugin.getServer().getScheduler();
+        Scheduler.TaskBuilder taskBuilder = scheduler.buildTask(plugin, runnable);
+
+        Object task = taskBuilder
                 .delay(delayMillis, TimeUnit.MILLISECONDS)
                 .repeat(periodMillis, TimeUnit.MILLISECONDS)
                 .schedule();
-        
+
         tasks.put(taskId, task);
         return taskId;
     }
@@ -75,16 +81,18 @@ public class VelocitySchedulerAdapter implements SchedulerAdapter {
 
     @Override
     public void cancelTask(int taskId) {
-        ScheduledTask task = tasks.remove(taskId);
-        if (task != null) {
-            task.cancel();
+        Object task = tasks.remove(taskId);
+        if (task != null && task instanceof ScheduledTask) {
+            ((ScheduledTask) task).cancel();
         }
     }
 
     @Override
     public void cancelAllTasks() {
-        for (ScheduledTask task : tasks.values()) {
-            task.cancel();
+        for (Object taskObj : tasks.values()) {
+            if (taskObj instanceof ScheduledTask) {
+                ((ScheduledTask) taskObj).cancel();
+            }
         }
         tasks.clear();
     }

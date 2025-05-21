@@ -22,7 +22,7 @@ import java.nio.file.Path;
         version = "0.6.2-SNAPSHOT",
         description = "ServerTap is a REST API for Minecraft servers, including Velocity proxies.",
         url = "https://servertap.io",
-        authors = {"phybros", "ATechAdventurer", "c1oneman", "Earlh21", "Scarsz", "au5ton", "Aberdeener", 
+        authors = {"phybros", "ATechAdventurer", "c1oneman", "Earlh21", "Scarsz", "au5ton", "Aberdeener",
                 "Hedlund01", "matteoturini", "Diddyy", "Velyn-N", "srmullaney", "TimeCoding"}
 )
 public class VelocityServerTapMain {
@@ -44,7 +44,7 @@ public class VelocityServerTapMain {
         // Initialize the platform
         platform = PlatformFactory.createPlatform(this, new VelocityLoggerAdapter(logger));
         platform.initialize();
-        
+
         logger.info("ServerTap has been enabled on Velocity!");
     }
 
@@ -53,7 +53,7 @@ public class VelocityServerTapMain {
         if (platform != null) {
             platform.shutdown();
         }
-        
+
         logger.info("ServerTap has been disabled on Velocity!");
     }
 

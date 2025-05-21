@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,12 +35,16 @@ public class VelocityPluginManager implements PluginManager {
     public List<PluginInfo> getPlugins() {
         List<PluginInfo> plugins = new ArrayList<>();
 
-        for (PluginContainer container : plugin.getServer().getPluginManager().getPlugins()) {
+        // Get all plugins from the plugin manager
+        Collection<PluginContainer> pluginContainers = plugin.getServer().getPluginManager().getPlugins();
+        for (PluginContainer container : pluginContainers) {
             // Get plugin description
             String name = container.getDescription().getName().orElse(container.getDescription().getId());
             String version = container.getDescription().getVersion().orElse("Unknown");
             String description = container.getDescription().getDescription().orElse("");
-            List<String> authors = new ArrayList<>(container.getDescription().getAuthors());
+            // Get authors list
+            List<String> authors = new ArrayList<>();
+            container.getDescription().getAuthors().forEach(authors::add);
             String url = container.getDescription().getUrl().orElse("");
             plugins.add(new PluginInfo(
                 name,
@@ -56,13 +61,16 @@ public class VelocityPluginManager implements PluginManager {
 
     @Override
     public PluginInfo getPlugin(String name) {
+        // Get plugin by ID
         Optional<PluginContainer> container = plugin.getServer().getPluginManager().getPlugin(name);
         if (container.isPresent()) {
             // Get plugin description
             String pluginName = container.get().getDescription().getName().orElse(container.get().getDescription().getId());
             String version = container.get().getDescription().getVersion().orElse("Unknown");
             String description = container.get().getDescription().getDescription().orElse("");
-            List<String> authors = new ArrayList<>(container.get().getDescription().getAuthors());
+            // Get authors list
+            List<String> authors = new ArrayList<>();
+            container.get().getDescription().getAuthors().forEach(authors::add);
             String url = container.get().getDescription().getUrl().orElse("");
 
             return new PluginInfo(

@@ -3,9 +3,7 @@ package io.servertap;
 import io.servertap.api.platform.PlatformFactory;
 import io.servertap.api.platform.ServerTapPlatform;
 import io.servertap.api.v1.models.ConsoleLine;
-import io.servertap.commands.LodeStoneCommand;
 import io.servertap.commands.ServerTapCommand;
-import io.servertap.gui.GUIManager;
 import io.servertap.metrics.Metrics;
 import io.servertap.plugin.api.ServerTapWebserverService;
 import io.servertap.plugin.api.ServerTapWebserverServiceImpl;
@@ -42,7 +40,6 @@ public class ServerTapMain extends JavaPlugin {
     private final LagDetector lagDetector;
     private final Server server;
     private WebServer app;
-    private GUIManager guiManager;
     private ServerTapPlatform platform;
 
     public ServerTapMain() {
@@ -85,10 +82,6 @@ public class ServerTapMain extends JavaPlugin {
         setupWebServer(bukkitConfig);
 
         new ServerTapCommand(this);
-
-        // Initialize GUI system
-        guiManager = new GUIManager(this);
-        new LodeStoneCommand(this, guiManager);
 
         webhookEventListener = new WebhookEventListener(this, bukkitConfig, log, externalPluginWrapperRepo.getEconomyWrapper());
         server.getPluginManager().registerEvents(webhookEventListener, this);
@@ -146,10 +139,6 @@ public class ServerTapMain extends JavaPlugin {
 
     public WebServer getWebServer() {
         return this.app;
-    }
-
-    public GUIManager getGUIManager() {
-        return this.guiManager;
     }
 
     public ConsoleListener getConsoleListener() {
