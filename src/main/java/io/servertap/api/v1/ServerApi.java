@@ -226,7 +226,7 @@ public class ServerApi {
         if (scoreboardManager == null) {
             throw new ServiceUnavailableResponse("Scoreboard manager is not initialized");
         }
-        
+
         org.bukkit.scoreboard.Scoreboard gameScoreboard = scoreboardManager.getMainScoreboard();
         Scoreboard scoreboardModel = new Scoreboard();
         Set<String> objectives = new HashSet<>();
@@ -259,7 +259,7 @@ public class ServerApi {
         if (scoreboardManager == null) {
             throw new ServiceUnavailableResponse("Scoreboard manager is not initialized");
         }
-        
+
         String objectiveName = ctx.pathParam("name");
         org.bukkit.scoreboard.Scoreboard gameScoreboard = scoreboardManager.getMainScoreboard();
         org.bukkit.scoreboard.Objective objective = gameScoreboard.getObjective(objectiveName);
@@ -318,11 +318,9 @@ public class ServerApi {
             }
     )
     public void whitelistGet(Context ctx) {
-        if (!bukkitServer.hasWhitelist()) {
-            // TODO: Handle Errors better
-            ctx.json("error: The server has whitelist disabled");
-            return;
-        }
+        // Always return whitelist data regardless of whether whitelist is enabled
+        // This makes the behavior consistent with the /v1/server endpoint
+        // which includes whitelist data without checking if whitelist is enabled
         ctx.json(getWhitelist());
     }
 
@@ -352,17 +350,25 @@ public class ServerApi {
             }
     )
     public void whitelistPost(Context ctx) {
-        if (!bukkitServer.hasWhitelist()) {
-            ctx.json("No whitelist");
-            return;
-        }
+        // Note: We're still allowing whitelist modifications even if whitelist is disabled
+        // This is consistent with the GET endpoint behavior
 
         String uuid = ctx.formParam("uuid");
         String name = ctx.formParam("name");
 
         if (uuid == null && name == null) throw new BadRequestResponse(Constants.WHITELIST_MISSING_PARAMS);
 
-        //Check Mojang API for missing param
+        // If UUID is provided, validate it first
+        if (uuid != null) {
+            UUID playerUUID = ValidationUtils.safeUUID(uuid);
+            if (playerUUID == null) {
+                throw new BadRequestResponse(Constants.INVALID_UUID);
+            }
+            // Use the validated UUID string
+            uuid = playerUUID.toString();
+        }
+
+        // Check Mojang API for missing param
         if (uuid == null) {
             try {
                 uuid = MojangApiService.getUuid(name);
@@ -371,10 +377,27 @@ public class ServerApi {
             } catch (IOException ignored) {
                 throw new ServiceUnavailableResponse(Constants.WHITELIST_MOJANG_API_FAIL);
             }
-        } // **MojangApiService.getNameHistory was deprecated and then removed**
+        }
 
-        //Whitelist file doesn't accept UUIDs without dashes
-        uuid = uuid.replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5");
+        // If name is missing but we have UUID, try to get the name from the server
+        if (name == null || name.isEmpty()) {
+            // Try to get the player name from the UUID
+            UUID playerUUID = UUID.fromString(uuid);
+            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerUUID);
+
+            // If the player has played before, use their name
+            if (offlinePlayer.getName() != null) {
+                name = offlinePlayer.getName();
+            } else {
+                // If we can't get the name, use a placeholder
+                name = "Unknown";
+            }
+        }
+
+        // Whitelist file doesn't accept UUIDs without dashes
+        if (!uuid.contains("-")) {
+            uuid = uuid.replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5");
+        }
 
         final File directory = new File("./");
 
@@ -426,17 +449,25 @@ public class ServerApi {
             responses = {@OpenApiResponse(status = "200")}
     )
     public void whitelistDelete(Context ctx) {
-        if (!bukkitServer.hasWhitelist()) {
-            ctx.json("No whitelist");
-            return;
-        }
+        // Note: We're still allowing whitelist modifications even if whitelist is disabled
+        // This is consistent with the GET endpoint behavior
 
         String uuid = ctx.formParam("uuid");
         String name = ctx.formParam("name");
 
         if (uuid == null && name == null) throw new BadRequestResponse(Constants.WHITELIST_MISSING_PARAMS);
 
-        //Check Mojang API for missing param
+        // If UUID is provided, validate it first
+        if (uuid != null) {
+            UUID playerUUID = ValidationUtils.safeUUID(uuid);
+            if (playerUUID == null) {
+                throw new BadRequestResponse(Constants.INVALID_UUID);
+            }
+            // Use the validated UUID string
+            uuid = playerUUID.toString();
+        }
+
+        // Check Mojang API for missing param
         if (uuid == null) {
             try {
                 uuid = MojangApiService.getUuid(name);
@@ -445,16 +476,37 @@ public class ServerApi {
             } catch (IOException ignored) {
                 throw new ServiceUnavailableResponse(Constants.WHITELIST_MOJANG_API_FAIL);
             }
-        } // **MojangApiService.getNameHistory was deprecated and then removed**
+        }
 
-        //Whitelist file doesn't accept UUIDs without dashes
-        uuid = uuid.replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5");
+        // Whitelist file doesn't accept UUIDs without dashes
+        if (!uuid.contains("-")) {
+            uuid = uuid.replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5");
+        }
 
         final File directory = new File("./");
         Set<Whitelist> whitelist = getWhitelist();
+        boolean removed = false;
 
-        String finalUuid = uuid;
-        whitelist.removeIf(entry -> entry.getUuid().toLowerCase().equals(finalUuid));
+        // Store the final values for use in lambda
+        String finalUuid = uuid.toLowerCase();
+        String finalName = name;
+
+        // If we have a UUID, try to remove by UUID first
+        if (uuid != null) {
+            int initialSize = whitelist.size();
+            whitelist.removeIf(entry -> entry.getUuid().toLowerCase().equals(finalUuid));
+            removed = whitelist.size() < initialSize;
+        }
+
+        // If we have a name and didn't remove by UUID, try to remove by name
+        if (!removed && name != null && !name.isEmpty()) {
+            int initialSize = whitelist.size();
+            whitelist.removeIf(entry -> entry.getName() != null && entry.getName().equalsIgnoreCase(finalName));
+            removed = whitelist.size() < initialSize;
+        }
+
+        // If nothing was removed, we might want to return an error, but the API currently returns success
+        // even if nothing was removed, so we'll keep that behavior for backward compatibility
 
         final String json = GsonSingleton.getInstance().toJson(whitelist);
         try {
